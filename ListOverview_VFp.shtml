@@ -1,0 +1,240 @@
+<apex:page standardStylesheets="true" showHeader="false" sidebar="false" standardcontroller="Opportunity" extensions="HTT_ListOfTEFSOverview_Controller">   
+<style>
+.button {   
+    padding: 5px 40px 5px 40px;
+    width: 140px;
+    background: lightblue;
+    text-align: center;
+    border-radius: 10px;
+    color: white;
+    font: bold 6px Arial;
+    color:##0000A0;
+    text-decoration: none;
+    vertical-align: middle;
+}
+
+.headclass2
+    {
+      display:none; 
+    }
+
+</style>
+<apex:includeScript value="/soap/ajax/26.0/connection.js"/>
+ <apex:includeScript value="/support/console/30.0/integration.js"/>
+<script type="text/javascript">
+
+ var preRecordId;
+        
+        function OpenSubtabTEFS(id, name) 
+        {
+            preRecordId= id;
+            //First find the ID of the primary tab to put the new subtab in
+
+            //alert('URL----->'+'{!$CurrentPage.URL}');
+            //alert(sforce.console.isInConsole());
+
+             if (sforce.console.isInConsole()){
+                sforce.console.getEnclosingPrimaryTabId(openSubtab);}
+                
+             else{
+                varURL = '/' + id;
+                //alert(varURL );
+                window.open(varURL, '_blank');}
+        }
+        
+        function OpenSubtabTEFSOver(param,pnId) 
+        {
+            preRecordId = param;
+            //First find the ID of the primary tab to put the new subtab in
+           
+            if (pnId!='' && pnId!=null){            
+             if (sforce.console.isInConsole()){
+                sforce.console.getEnclosingPrimaryTabId(openSubtab);}
+             else{
+                 varURL = '/' + preRecordId;
+                 if(pnId=='AAAAAAAAAAA'){       
+                      window.top.location.href = varURL; }
+                 else {
+                      var w = window.open(varURL,'_blank' ); }                  
+               }
+            }
+            else{  
+               alert('Part Number have not been recovered from PQF yet!');   }
+        }
+        
+        var openSubtab = function openSubtab(result) 
+        {
+            //Now that we have the primary tab ID, we can open a new subtab in it
+            var primaryTabId = result.id;
+            
+            sforce.console.openSubtab(primaryTabId , '/'+preRecordId , true, 
+                preRecordId , null , openSuccess, 'salesforceSubtab');
+        };
+        
+        var openSuccess = function openSuccess(result) 
+        {
+            //Report whether we succeeded in opening the subtab
+            
+             /*   if (result.success == true) 
+                {
+                    alert('subtab successfully opened');
+                } 
+                else 
+                {
+                    alert('subtab cannot be opened');
+                }*/
+            
+        };
+
+</script>
+<apex:form >
+    <div style="width:100%;text-align:right">
+       <apex:pageblock mode="Maindetail" >
+          <br/>
+              <center> 
+                   <!--<a href="#" onclick="OpenSubtabTEFSOver('apex/HTT_OverrideTEFS?CF00N18000000TP4B_lkid={!PNId}&mode=edit','{!PNId}');return false" class="button" style="margin-left:5%;width:140px;border-radius:9px;background:lightblue;font-weight:bold;font-size:16px;color:##0000A0">New TEFS</a><!--to revise per console-->
+                   <a href="#" onclick="OpenSubtabTEFSOver('{!URL}','{!PNId}');return false" class="button" style="margin-left:5%;width:140px;border-radius:9px;background:lightblue;font-weight:bold;font-size:16px;color:##0000A0">New</a>
+                   <a href="#" onclick="OpenSubtabTEFS('apex/HTT_OEM_TEFS_ChartPage?id={!Opportunity.Id}','');return false" class="button" style="margin-left:5%;width:140px;border-radius:9px;background:lightblue;font-weight:bold;font-size:16px;color:##0000A0">Charts </a>
+                  <a href="#" onclick="OpenSubtabTEFS('apex/HTT_OEM_TefsAndBaselineExport?id={!Opportunity.Id}','');return false" class="button" style="margin-left:5%;width:140px;border-radius:9px;background:lightblue;font-weight:bold;font-size:16px;color:##0000A0">Excel Report</a>
+              </center>
+          <br/>
+          <apex:pageMessages id="pgm1" />
+          <!--<apex:pageblocksection columns="1">-->
+          <apex:outputPanel layout="block" style="overflow:auto;height:45px;border-top: 0px;{!IF(LOTEFS.size<=10, 'width:100%', 'width:98.5%')}">
+           <apex:PageblockTable value="{!LOTEFS}" var="listofTEFS" width="100%" columnsWidth="6.25%,6.25%,6.25%,6.25%,9.25%,6.25%,5.75%,5.75%,5.75%,5.75%,5.75%,5.75%,6.25%,6.25%,6.25%,6.25%" id="HeaderTable" rowClasses="headclass2,headclass2"> 
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:facet name="header">TEFS no# </apex:facet>
+                  <!--<a href="#" onclick="OpenSubtabTEFS('{!listofTEFS.Id}', '{!listofTEFS.Id}');return false">TEFS{!listofTEFS.Version__c}</a>to revise per console-->
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:facet name="header">Status</apex:facet>
+             </apex:column>
+             <!--<apex:column headerValue="PQF Id" style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:outputText value="{!listofTEFS.PQF_Id__c}">
+                     </apex:outputText>
+             </apex:column>-->
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:facet name="header">Category</apex:facet>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:facet name="header">Type</apex:facet>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:facet name="header">Description</apex:facet>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:facet name="header">Source</apex:facet>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:facet name="header">Currency</apex:facet>
+             </apex:column>
+             <apex:column headerValue="BOM cost" style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:facet name="header">BOM cost</apex:facet>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:facet name="header">Price</apex:facet>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:facet name="header">$MM</apex:facet>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:facet name="header">MM%</apex:facet>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;{!IF(listofTEFS.MM_Improvement__c<=0, "background-color: #FF0000;font-weight:bold;", "background-color:#32CD32;font-weight:bold;")}"> 
+                     <apex:facet name="header">MM% Δ</apex:facet>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:facet name="header">CAPEX $</apex:facet>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:facet name="header">TESTING</apex:facet>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:facet name="header">Proto</apex:facet>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:facet name="header">Eng. cost</apex:facet>
+             </apex:column>
+          </apex:PageblockTable>
+          </apex:outputPanel>
+         
+         <div style=" position:relative; top:-20px">
+          <apex:outputPanel layout="block" style="overflow:auto;width:100%;height:200px;border-top: 0px;">
+          <apex:PageblockTable value="{!LOTEFS}" var="listofTEFS" width="100%" headerClass="headclass2" columnsWidth="6.25%,6.25%,6.25%,6.25%,9.25%,6.25%,5.75%,5.75%,5.75%,5.75%,5.75%,5.75%, 6.25%, 6.25%, 6.25%, 6.25%"> 
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                  <a href="#" onclick="OpenSubtabTEFS('{!listofTEFS.Id}', '{!listofTEFS.Id}');return false">TEFS{!listofTEFS.Version__c}</a><!--to revise per console-->
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:outputText value="{!listofTEFS.Status__c}">
+                     </apex:outputText>
+             </apex:column>
+             <!--<apex:column headerValue="PQF Id" style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:outputText value="{!listofTEFS.PQF_Id__c}">
+                     </apex:outputText>
+             </apex:column>-->
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:outputText value="{!listofTEFS.Category_of_Change__c}">
+                     </apex:outputText>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:outputText value="{!listofTEFS.Change_Type__c}">
+                     </apex:outputText>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:outputText value="{!listofTEFS.Description_Change__c}">
+                     </apex:outputText>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:outputText value="{!listofTEFS.Source_Change__c}">
+                     </apex:outputText>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:outputText value="{!listofTEFS.CurrencyIsoCode}">
+                     </apex:outputText>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:outputText value="{!ROUND(listofTEFS.New_Cost__c,2)}">
+                     </apex:outputText>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:outputText value="{!listofTEFS.New_Price__c}">
+                     </apex:outputText>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:outputText value="{!listofTEFS.New_MM__c}">
+                     </apex:outputText>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:outputText value="{!ROUND(listofTEFS.New_MM_perc__c,1)}">
+                     </apex:outputText>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;{!IF(listofTEFS.MM_Improvement__c<=0, "background-color: #FF0000;font-weight:bold;", "background-color:#32CD32;font-weight:bold;")}"> 
+                     <apex:outputText value="{!listofTEFS.MM_Improvement__c}">
+                     </apex:outputText>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:outputText value="{!ROUND(listofTEFS.Tooling__c,0)}">
+                     </apex:outputText>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:outputText value="{!ROUND(listofTEFS.Testing__c,0)}">
+                     </apex:outputText>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:outputText value="{!ROUND(listofTEFS.Prototype__c,0)}">
+                     </apex:outputText>
+             </apex:column>
+             <apex:column style="border-right:1px solid #CFCBCA;width:5%;"> 
+                     <apex:outputText value="{!ROUND(listofTEFS.Eng_Cost__c,0)}">
+                     </apex:outputText>
+             </apex:column>
+          </apex:PageblockTable>
+          
+          </apex:outputPanel>
+         </div>
+          <!--</apex:pageblocksection>-->
+        </apex:pageblock>
+    </div>    
+</apex:form>
+
+</apex:page>

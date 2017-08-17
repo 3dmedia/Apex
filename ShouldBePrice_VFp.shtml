@@ -1,0 +1,1947 @@
+<apex:page Controller="HTT_ShouldBePrice_editpage_Controller" sidebar="false">
+<style>
+
+.HclassAtt{width:7%;text-align: center;font-size: 15px !important;}
+
+</style>
+<script type='text/javascript' src="/soap/ajax/9.0/connection.js"></script>
+<script>
+
+function loading(val) {
+    if (val) {
+      document.getElementById('contentLoading').style.display = 'block';
+      document.getElementById('contentLoading1').style.display = 'block';
+      
+    }
+    else {
+      document.getElementById('contentLoading').style.display = 'none';
+      document.getElementById('contentLoading1').style.display = 'none';
+    }
+  }
+  
+function loadingUpdateS(val) {
+    if (val) {
+      document.getElementById('contentLoadingUpdateS').style.display = 'block';
+    }
+    else {
+      document.getElementById('contentLoadingUpdateS').style.display = 'none';
+    }
+  }
+function loadingEdit(val){
+    if (val) {
+      document.getElementById('contentLoading1').style.display = 'block';
+    }
+    else {
+      document.getElementById('contentLoading1').style.display = 'none';
+    }
+}
+  
+
+function cvCheckAllOrNone(allOrNoneCheckbox) {
+    // Find parent table
+    var container = allOrNoneCheckbox;
+    while (container.tagName != "TABLE") {
+        container = container.parentNode;
+    }
+
+    // Switch all checkboxes
+    var inputs = container.getElementsByTagName("input");
+    var checked = allOrNoneCheckbox.checked;
+    for (var i = 0; i < inputs.length; i++) {
+        var input = inputs.item(i);
+        if (input.type == "checkbox") {
+            if (input != allOrNoneCheckbox) {
+                input.checked = checked;
+            }
+        }
+    }
+    if(checked){
+        selectAll();
+    }
+    else{
+        unselectAll();
+    }
+}
+
+
+function OpenTab(id, name)
+        {
+
+
+
+                varURL = '/' + id;
+                //alert(varURL );
+                window.open(varURL, '_blank');
+        }
+
+function checkNumberOfCheckboxes(){
+    var count = $("[type='checkbox']:checked").length;
+    if(count>=2){
+    
+        alert('Please select only one Sales Plan to edit!');
+        $('input:checkbox').removeAttr('checked');
+        //unselectAll();
+        return null;
+    
+    }
+}
+
+
+function popupwindowForAll(selectFilter, searchValue,selectedChannel,mult_pn,mult_cpn,mult_npo,mult_brand, mult_engdesc){
+
+    varURL = '/apex/HTT_SelectReasonCodes_Popup?selectFilter='+selectFilter
+                                                +'&searchValue='+searchValue
+                                                +'&selectedChannel='+selectedChannel
+                                                +'&mult_pn='+mult_pn
+                                                +'&mult_cpn='+mult_cpn
+                                                +'&mult_npo='+mult_npo
+                                                +'&mult_brand='+mult_brand
+                                                +'&mult_engdesc='+mult_engdesc;
+
+    var w = window.open(varURL,'New Component', 'height=400,width=650,left=150,top=100,scrollbars=yes,toolbar=no,status=no', target='_blank' );
+}
+
+function popupwindow(ids){
+    varURL = '/apex/HTT_SelectReasonCodes_Popup?salesPlanIds=' + ids;
+    //alert(varURL);
+    //window.top.location.href = varURL;
+    var w = window.open(varURL,'New Component', 'height=400,width=650,left=150,top=100,scrollbars=yes,toolbar=no,status=no', target='_blank' );
+}
+
+function openCalendar(){ 
+var urltext='';
+
+urltext='/00U/c?cType=2&md0=YEAR(TODAY())&md1=MONTH(TODAY())&isdtp=mn&fcf=00B1400000AGBfB';
+
+window.open(urltext, '','scrollbars=yes,menubar=no,height=600,width=800,resizable=yes, toolbar=no,location=no,status=yes');         
+
+} 
+
+function newlumpsum(rectypId){ 
+var urltext='';
+
+urltext='/a1d/e?RecordType=' + rectypId;
+
+window.open(urltext, '');         
+
+} 
+
+function impSumAcc(rectypId){ 
+var urltext='';
+
+urltext='/apex/HTT_SBP_SimulationBrand?sp_id=' + rectypId;
+
+window.open(urltext, '');         
+
+} 
+
+
+</script>
+
+    <apex:includescript value="{!URLFOR( $Resource.Influence, 'jquery-1.4.4.min.js' )}" />
+    <apex:form >
+    
+    <apex:pageBlock >
+    
+        <apex:outputpanel title="Results_adv" Id="filters">     
+
+            <apex:outputPanel rendered="{!show_adv}">
+                
+                <b>Advanced Search</b>
+                
+                <apex:commandButton action="{!switch_to_simple}" value="Simple Search" reRender="filters, results" style="float:right"/>
+                <br>&nbsp;</br>
+                
+                <table border="0" width="100%">
+                    <tr>
+                        <td>
+                            NPO:
+                            <br></br>
+                            <apex:inputText value="{!mult_npo}" style="width:400px"/>
+                        </td>
+                        <td>
+                            Account:
+                            <br></br>
+                            <apex:inputText value="{!mult_brand}" style="width:400px"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            HTT P/N:
+                            <br></br>
+                            <apex:inputText value="{!mult_pn}" style="width:400px"/>
+                        </td>
+                        <td>
+                            Customer P/N:
+                            <br></br>
+                            <apex:inputText value="{!mult_cpn}" style="width:400px"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Engine Description:
+                            <br></br>
+                            <apex:inputText value="{!mult_engdesc}" style="width:400px"/>
+                        </td>
+                        <td>
+                            Channel:
+                            <br></br>
+                            <apex:selectList value="{!mult_chn}" size="1" multiselect="false">
+                                <apex:selectOption itemLabel="OEM" itemValue="OEM" />
+                                <apex:selectOption itemLabel="OES" itemValue="OES" />
+                                <apex:selectOption itemLabel="OEM+OES" itemValue="OEM+OES" />
+                            </apex:selectList> 
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>    
+                            Lump Sum:
+                            <apex:inputCheckbox value="{!mult_ls}" />
+                        </td>                    
+                    </tr>
+                </table>        
+
+                <!--<apex:outputtext value="{!message}"/>-->
+            
+                <apex:commandButton action="{!search_sp_mult}" value="Search" reRender="filters, results, results_sbp, results_sbp_all, results_sbp_simple" style="float:left"/>
+                
+                <br>&nbsp;</br>
+                <br>&nbsp;</br>
+                
+                 <apex:commandButton onclick="openCalendar()" title="Calendar" value="Calendar" reRender="filters, results, results_sbp, results_sbp_all, results_sbp_simple" style="float:left"/>
+                
+                <br>&nbsp;</br>
+
+                <apex:pageMessages id="pgm2" /> 
+            
+            </apex:outputPanel>
+            
+                 
+
+            <apex:outputPanel rendered="{!show_simple}">
+            
+                <b>Simple Search</b>
+                
+                <apex:commandButton action="{!switch_to_adv}" value="Advanced Search" title="Advanced Search" reRender="filters, results" style="float:right"/>
+                
+                <br>&nbsp;</br>
+                
+                <table border="0">
+                    <tr>
+                        <td>
+                            Search for:
+                            <br></br>
+                            
+                            <apex:inputText value="{!searchValue}" style="width:350px" id="searchValue">
+                                <apex:actionSupport event="onkeyup" action="{!search_list}" rerender="resultsPanel"/>
+                                <apex:actionSupport event="onclick" action="{!search_list}" rerender="resultsPanel"/>
+                            </apex:InputText>
+                            
+                            <apex:outputPanel id="resultsPanel" layout="block" style="position: absolute;">
+                                <apex:selectList value="{!list_value}" size="{!height}" style="width:350px" rendered="{!showList}" >
+                                    <apex:selectOptions value="{!results}"/>
+                                    <apex:actionSupport event="onchange" action="{!selectvalue}" rerender="resultsPanel,searchValue"/>
+                                </apex:selectList>
+                            </apex:outputPanel>
+
+                            <apex:selectList value="{!selectFilter}" size="1" multiselect="false">
+                                <apex:selectOption itemValue="pn" itemLabel="HTT P/N" />
+                                <apex:selectOption itemValue="cpn" itemLabel="Customer P/N" />
+                                <apex:selectOption itemValue="npo" itemLabel="NPO" />
+                                <apex:selectOption itemValue="brand" itemLabel="Account" />
+                                <apex:selectOption itemValue="eng desc" itemLabel="Engine Desc" />
+                                <apex:selectOption itemValue="lsum" itemLabel="Lump Sum" />
+                            </apex:selectList>                          
+
+                            <!-- <apex:actionFunction name="hideResults" action="{!hideResults}" reRender="resultsPanel"/>
+                            <script type="text/javascript">
+                                document.onclick = function(){
+                                    hideResults();
+                                }
+                            </script> -->
+                            
+                        </td>
+                        <td>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        </td>
+                        <td>
+                            Channel:
+                            <br></br>
+                            <apex:selectList value="{!selectedChannel}" size="1" multiselect="false">
+                                <apex:selectOption itemLabel="OEM" itemValue="OEM" />
+                                <apex:selectOption itemLabel="OES" itemValue="OES" />
+                                <apex:selectOption itemLabel="OEM+OES" itemValue="OEM+OES" />
+                            </apex:selectList>                            
+
+                        </td>
+                        <td>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        </td>                       
+                        <!--MSavioli: remove the version Filter<td>
+                            Version:
+                            <br></br>
+                            <apex:selectList value="{!selectedMonth}" size="1" multiselect="false">
+                                <apex:selectOption itemLabel="Current Sales Plan" itemValue="Current Sales Plan" />
+                                <apex:selectOption itemLabel="Past Sales Plan" itemValue="Past Sales Plan" />
+                            </apex:selectList>                            
+
+                        </td>  -->                     
+                        <td>
+                            <br></br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<apex:commandButton action="{!search_sp_simple}" value="Search" title="Search" reRender="filters, results, simple,results_sbp, results_sbp_all, results_sbp_simple" status="loadingSearchS"/>
+                                                            <apex:actionStatus id="loadingSearchS" onstart="loading(true)" onstop="loading(false)" />
+                            
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<apex:commandButton onclick="openCalendar()" title="Calendar" value="Calendar" reRender="filters, results, simple,results_sbp, results_sbp_all, results_sbp_simple"/>
+                            
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<apex:commandButton onclick="newlumpsum('{!LumpSumSPRTId}')" title="New Lump Sum" value="New Lump Sum" reRender="filters, results, simple,results_sbp, results_sbp_all, results_sbp_simple"/>
+                        </td>
+                       
+                    </tr>
+                </table>
+                
+                <br>&nbsp;</br>
+                <apex:pageMessages id="pgm1" />
+                
+                <!--TEST MESSAGE <apex:outputtext value="{!message}"/>--->
+                
+            </apex:outputPanel>
+        </apex:outputpanel>    
+    
+        <!--<br>&nbsp;</br>-->
+        
+        <apex:outputPanel id="results" layout="block">
+        
+            <!--{!message}
+            <br>&nbsp;</br>
+
+            <center>                
+                <apex:commandButton action="{!edit_all}" id="EditAll1" value="Edit All PN" rerender="results_sbp"/>
+                <apex:commandButton action="{!edit_single}" id="EditSingle1" value="Edit Single PN" rerender="results_sbp"/>
+            </center>-->
+            
+            <br></br>
+            
+            <apex:commandLink action="{!previous_sp}" value="<< Previous" rendered="{!show_prev}" reRender="results"/>
+            &nbsp;<apex:commandLink action="{!next_sp}" value="Next >>" rendered="{!show_next}" reRender="results"/>
+            
+            <apex:outputText value="Page {!iteration_current + 1} of {!iteration_total}" rendered="{!OR(show_prev,show_next)}" style="float:right"/>
+            
+            <apex:outputPanel id="results2" layout="block" style="overflow:auto;width:90%;height:730px">
+                <div id="contentLoading" style="display:none;">
+                    <div style="text-align: center;">
+                        <img src="/img/loading.gif" alt="Loading graphic" />
+                    </div>
+                </div>
+
+                <span><strong>Select All</strong></span>
+                <apex:inputCheckbox id="select_all" onclick="cvCheckAllOrNone(this)" title="Select All">
+                    <!--<apex:actionSupport event="onclick" action="{!selectAll}" reRender="results, results2, results3"/>-->
+                    <apex:actionFunction action="{!selectAll}" name="selectAll" reRender="results, results2, results3" status="loading"/>
+                    <apex:actionFunction action="{!unselectAll}" name="unselectAll" reRender="results, results2, results3" status="loading"/>
+                    <apex:actionStatus id="loading" onstart="loading(true)" onstop="loading(false)" />
+                </apex:inputCheckbox>
+                <br>&nbsp;</br>
+                <apex:pageBlockTable value="{!sp_list_table}" var="item" Id="results3" columns="13" rowclasses="" styleClass="list" width="100%">
+                    
+                    <apex:column width="3%" title="Select" id="select_button">
+                            <apex:facet name="header">Select</apex:facet>
+                            <center>
+                                <apex:inputCheckBox value="{!item.select_bool}" id="checks">
+                                    <apex:actionSupport event="onclick" action="{!updateCheckbox}" onsubmit="checkNumberOfCheckboxes()" status="loading" rerender="results_sbp"> <!--,results, results2, results3-->
+                                     <apex:actionStatus id="loading" onstart="loading(true)" onstop="loading(false)" />
+                                        <apex:param value="{!item.sp.Id}" name="sp_id" assignTo="{!sp_id}"/>
+                                        <apex:param value="{!item.select_bool}" name="new_bool" assignTo="{!selected_bool}"/>
+                                    </apex:actionSupport>
+                                </apex:inputCheckBox>
+                            </center>
+                    </apex:column>          
+                    
+                    <!--<apex:column >
+                        <apex:facet name="header">Version</apex:facet>
+                        <!--<apex:outputLink value="/{!item.sp.Id}">Sales Plan&nbsp;{!item.sp.Roll_Month_Numeric__c}</apex:outputLink>
+                    </apex:column>
+                    <apex:column >
+                    <apex:facet name="header">Region</apex:facet>
+                        <apex:outputtext value="{!item.sp.Region__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Channel</apex:facet>
+                        <apex:outputtext value="{!item.sp.Channel__c}"/>
+                    </apex:column>-->
+                    <apex:column value="{!item.sp.Price_Variant__c}" title="Price Variant">
+                        <apex:facet name="header">Price Variant</apex:facet>
+                    </apex:column>
+                    
+                    <apex:column value="{!item.sp.App_Id__c}" title="NPO">
+                        <apex:facet name="header">App Id</apex:facet>
+                    </apex:column>
+                    
+                    <apex:column value="{!item.sp.NPO__c}" title="NPO">
+                        <apex:facet name="header">NPO</apex:facet>
+                    </apex:column>
+                    
+                    <apex:column >
+                        <apex:facet name="header">HTT P/N</apex:facet>
+                        <!--<apex:outputLink value="/{!item.sp.Id}">{!item.sp.Material_prd__r.External_ID__c}</apex:outputLink>-->
+                        <apex:outputtext value="{!item.sp.Material_prd__r.External_ID__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Customer P/N</apex:facet>
+                        <apex:outputtext value="{!item.sp.P_N_Customer__c}"/>
+                    </apex:column>  
+                    
+                    
+                    
+                     <!--<apex:column value="{!item.sp.Material_prd__r.Material_Engine_Description__c}" title="Material Engine Description">
+                        <apex:facet name="header">Material Engine Description</apex:facet>
+                    </apex:column>-->
+                    <apex:column value="{!item.sp.Material_Engine_Description__c}" title="Material Engine Description">
+                        <apex:facet name="header">Material Engine Description</apex:facet>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Account</apex:facet>
+                        <apex:outputtext value="{!item.sp.Brand_Ship_To__c}"/>
+                    </apex:column>  
+                    <apex:column >
+                        <apex:facet name="header">Channel</apex:facet>
+                        <apex:outputtext value="{!item.sp.Channel__c}"/>
+                    </apex:column>                 
+                    <!--<apex:column value="{!item.sp.Material_prd__r.Vertical__c}" title="Vertical">
+                        <apex:facet name="header">Vertical</apex:facet>
+                    </apex:column>-->
+                    <apex:column value="{!item.sp.Shipping_Plant__c}" title="Shipping Plant">
+                        <apex:facet name="header">Shipping Plant</apex:facet>
+                    </apex:column>
+                    <apex:column value="{!item.sp.Assembly_Plant__c}" title="Assembly Plant">
+                        <apex:facet name="header">Assembly Plant</apex:facet>
+                    </apex:column>          
+                    <apex:column value="{!item.sp.Volume__c}" title="Volume">
+                        <apex:facet name="header">FY Volume</apex:facet>
+                    </apex:column>
+                    <apex:column value="{!item.sp.CurrencyIsoCode} {!item.sp.SAP_Price__c}" title="SAP Price">
+                        <apex:facet name="header">Current month SAP</apex:facet>
+                    </apex:column>                  
+                     
+                    <!--
+                    <apex:column >
+                        <apex:facet name="header">M01</apex:facet>
+                        <apex:outputtext value="{!item.sp.M01__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">M02</apex:facet>
+                        <apex:outputtext value="{!item.sp.M02__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">M03</apex:facet>
+                        <apex:outputtext value="{!item.sp.M03__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">M04</apex:facet>
+                        <apex:outputtext value="{!item.sp.M04__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">M05</apex:facet>
+                        <apex:outputtext value="{!item.sp.M05__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">M06</apex:facet>
+                        <apex:outputtext value="{!item.sp.M06__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">M07</apex:facet>
+                        <apex:outputtext value="{!item.sp.M07__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">M08</apex:facet>
+                        <apex:outputtext value="{!item.sp.M08__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">M09</apex:facet>
+                        <apex:outputtext value="{!item.sp.M09__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">M10</apex:facet>
+                        <apex:outputtext value="{!item.sp.M10__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">M11</apex:facet>
+                        <apex:outputtext value="{!item.sp.M11__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">M12</apex:facet>
+                        <apex:outputtext value="{!item.sp.M12__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Y+1 M01</apex:facet>
+                        <apex:outputtext value="{!item.sp.M13__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Y+1 M02</apex:facet>
+                        <apex:outputtext value="{!item.sp.M14__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Y+1 M03</apex:facet>
+                        <apex:outputtext value="{!item.sp.M15__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Y+1 M04</apex:facet>
+                        <apex:outputtext value="{!item.sp.M16__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Y+1 M05</apex:facet>
+                        <apex:outputtext value="{!item.sp.M17__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Y+1 M06</apex:facet>
+                        <apex:outputtext value="{!item.sp.M18__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Y+1 M07</apex:facet>
+                        <apex:outputtext value="{!item.sp.M19__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Y+1 M08</apex:facet>
+                        <apex:outputtext value="{!item.sp.M20__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Y+1 M09</apex:facet>
+                        <apex:outputtext value="{!item.sp.M21__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Y+1 M10</apex:facet>
+                        <apex:outputtext value="{!item.sp.M22__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Y+1 M11</apex:facet>
+                        <apex:outputtext value="{!item.sp.M23__c}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Y+1 M12</apex:facet>
+                        <apex:outputtext value="{!item.sp.M24__c}"/>
+                    </apex:column>-->
+                    
+                </apex:pageBlockTable>
+                      <br></br>   
+                    
+            </apex:outputPanel>         
+            
+            <br>&nbsp;</br>
+            
+            <center>   
+            
+            <div id="contentLoading1" style="display:none;">
+                    <div style="text-align: center;">
+                        <img src="/img/loading.gif" alt="Loading graphic" />
+                    </div>
+                </div>
+                <br></br> 
+                <apex:commandButton action="{!edit_all}" id="EditAll2" value="Edit All PN" rerender="results_sbp" status="loadingEditS"/>
+                    <apex:actionStatus id="loadingEditS" onstart="loadingEdit(true)" onstop="loadingEdit(false)" />
+                <!--<apex:commandButton action="{!edit_single}" id="EditSingle2" value="Edit Single PN" rerender="results_sbp" /> -->
+             <apex:commandButton action="{!edit_single}" onclick="checkNumberOfCheckboxes()"  id="EditSingle2" value="Edit Single PN" rerender="results_sbp" status="loadingEditS1"/> 
+                   <apex:actionStatus id="loadingEditS1" onstart="loadingEdit(true)" onstop="loadingEdit(false)" />
+                <!--<apex:commandButton action="{!exportSelectedSalesPlan}" id="ExportSelected" value="Export Selected PN" rerender="filters, results">
+                    <apex:param name="salesPlanIdss"
+                                value="{!salesPlanIdsToExport}"
+                                assignTo="{!salesPlanIds}"/>
+                </apex:commandButton>-->
+                
+                <apex:commandButton style="position:absolute;right:305px;" action="{!doNothing}" value="Submit Price Change" onclick="OpenTab('apex/HTT_ShouldBePriceSubmitApproval','');return false" immediate="false" rerender="results_sbp" />
+                
+                <apex:commandButton style="position:absolute;right:220px;" action="{!doNothing}" value="Export All PN"
+                                    onclick="popupwindowForAll(
+                                                '{!selectFilter}',
+                                                '{!searchValue}',
+                                                '{!selectedChannel}',
+                                                '{!mult_pn}',
+                                                '{!mult_cpn}',
+                                                '{!mult_npo}',
+                                                '{!mult_brand}',
+                                                '{!mult_engdesc}'
+                                             )"
+                                    immediate="false" rerender="results_sbp" />
+                <apex:commandButton style="position:absolute;right:100px;" action="{!doNothing}" value="Export Selected PN" onclick="popupwindow('{!salesPlanIdsToExport}')" immediate="false" rerender="results_sbp" />
+
+                <apex:commandButton style="position:absolute;right:30px;" action="{!doNothing}" value="Import PN" onclick="OpenTab('apex/HTT_ShouldBePriceImportPage','');return false" immediate="false" rerender="results_sbp" />
+            </center>
+
+            
+        </apex:outputPanel>
+        
+        <apex:outputPanel Id="results_sbp">
+        
+                
+                <apex:outputPanel id="SBPresultAll" layout="block" rendered="{!show_edit_all}"> 
+                
+                <br>&nbsp;</br>
+                {!message}
+                
+                <br>&nbsp;</br>
+                <center>                
+                    <apex:commandButton action="{!updateAll}" id="UpdateAll3" value="Update Multiple PN" rendered="{!show_update_all}" rerender="results_sbp,SBPresultAll" status="loading2">
+                        <apex:actionStatus id="loading2" onstart="loading(true)"   onstop="loading(false)" />
+                    </apex:commandButton>
+                </center>
+                
+                <br>&nbsp;</br>
+                
+                 <center>
+                    <apex:commandLink action="{!previous_year}" value="< Previous" rendered="{!if(show_curry==true || show_nexty==true,true,false)}" style="font-size:15px;"  reRender="SBPresultAll"/>
+                    &nbsp;<apex:outputText value="Past Year" style="font-size:18px;" rendered="{!show_pasty}"/> &nbsp;
+                    &nbsp;<apex:outputText value="Current Year" style="font-size:18px;" rendered="{!show_curry}"/> &nbsp;
+                    &nbsp;<apex:outputText value="Next Year" style="font-size:18px;" rendered="{!show_nexty}"/>&nbsp;
+                    <apex:commandLink action="{!next_year}" value="Next >" rendered="{!if(show_pasty==true || show_curry==true,true,false)}" style="font-size:15px;"  reRender="SBPresultAll"/>
+                </center>
+                
+              
+                <br>&nbsp;</br>
+
+                <br></br>
+                <apex:pageBlockTable value="{!sbp_tran_all}" var="sbp_tran_list_all" columns="13" rendered="{!show_pasty}" rowclasses="" styleClass="list" style="width:100%"  >
+                
+                    <apex:column >
+                        <apex:facet name="header"></apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_all.varPrice_RC}"/>
+                    </apex:column>            
+                    <apex:column >
+                        <apex:facet name="header">January {!curr_year}</apex:facet>
+                           <apex:inputtext value="{!sbp_tran_list_all.varM1Y0}" style="width:100%" />
+                    </apex:column> 
+                    <apex:column >
+                        <apex:facet name="header">February {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM2Y0}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">March {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM3Y0}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">April {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM4Y0}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">May {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM5Y0}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">June {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM6Y0}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">July {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM7Y0}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">August {!curr_year}</apex:facet>
+                         <apex:inputtext value="{!sbp_tran_list_all.varM8Y0}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">September {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM9Y0}" style="width:100%"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">October {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM10Y0}" style="width:100%"/>
+                    </apex:column>   
+                    <apex:column >
+                        <apex:facet name="header">November {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM11Y0}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">December {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM12Y0}" style="width:100%" />
+                    </apex:column>
+                </apex:pageBlockTable> 
+                
+                <apex:pageBlockTable value="{!sbp_tran_all}" var="sbp_tran_list_all" columns="13" rendered="{!show_curry}" rowclasses="" styleClass="list" style="width:100%"  >
+                
+                    <apex:column >
+                        <apex:facet name="header"></apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_all.varPrice_RC}"/>
+                    </apex:column>            
+                    <apex:column >
+                        <apex:facet name="header">January {!curr_year}</apex:facet>
+                           <apex:inputtext value="{!sbp_tran_list_all.varM1Y1}" style="width:100%" />
+                    </apex:column> 
+                    <apex:column >
+                        <apex:facet name="header">February {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM2Y1}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">March {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM3Y1}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">April {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM4Y1}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">May {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM5Y1}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">June {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM6Y1}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">July {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM7Y1}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">August {!curr_year}</apex:facet>
+                         <apex:inputtext value="{!sbp_tran_list_all.varM8Y1}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">September {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM9Y1}" style="width:100%"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">October {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM10Y1}" style="width:100%"/>
+                    </apex:column>   
+                    <apex:column >
+                        <apex:facet name="header">November {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM11Y1}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">December {!curr_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM12Y1}" style="width:100%" />
+                    </apex:column>
+                </apex:pageBlockTable>    
+                
+                <apex:pageBlockTable value="{!sbp_tran_all}" var="sbp_tran_list_all" columns="13" rendered="{!show_nexty}" rowclasses="" styleClass="list" style="width:100%"  >
+                
+                    <apex:column >
+                        <apex:facet name="header"></apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_all.varPrice_RC}"/>
+                    </apex:column>     
+                    <apex:column >
+                        <apex:facet name="header">January {!next_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM1Y2}" style="width:100%" />
+                    </apex:column>   
+                    <apex:column >
+                        <apex:facet name="header">February {!next_year}</apex:facet>
+                         <apex:inputtext value="{!sbp_tran_list_all.varM2Y2}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">March {!next_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM3Y2}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">April {!next_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM4Y2}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">May {!next_year}</apex:facet>
+                         <apex:inputtext value="{!sbp_tran_list_all.varM5Y2}" style="width:100%"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">June {!next_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM6Y2}" style="width:100%" />
+                    </apex:column> 
+                    <apex:column >
+                        <apex:facet name="header">July {!next_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM7Y2}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">August {!next_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM8Y2}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">September {!next_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM9Y2}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">October {!next_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM10Y2}" style="width:100%" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">November {!next_year}</apex:facet>
+                        <apex:inputtext value="{!sbp_tran_list_all.varM11Y2}" style="width:100%" />
+                    </apex:column> 
+                    <apex:column >
+                        <apex:facet name="header">December {!next_year}</apex:facet>
+                         <apex:inputtext value="{!sbp_tran_list_all.varM12Y2}" style="width:100%" />
+                    </apex:column>         
+                    
+                </apex:pageBlockTable>   
+                
+                <br>&nbsp;</br>
+                <center>                
+                    <apex:commandButton action="{!updateAll}" id="UpdateAll2" value="Update Multiple PN" rendered="{!show_update_all}" rerender="results_sbp,SBPresultAll" status="loading3">
+                        <apex:actionStatus id="loading3" onstart="loading(true)" onstop="loading(false)" />
+                    </apex:commandButton>
+                </center>
+                <br>&nbsp;</br>        
+          
+
+                </apex:outputpanel>  
+                <!-- Transpose table all -end -->
+                
+
+            <apex:outputPanel Id="results_sbp_single" rendered="{!show_edit_single}">       
+            
+                <br>&nbsp;</br>
+                <center>                
+                    <!--<apex:commandButton action="{!updateSingle}" id="UpdateSingle" value="Update Single Ship-to" rerender="results_sbp"/>-->
+                </center>
+                <br>&nbsp;</br>{!message2}
+                
+                <table border="0" width="100%">
+                    <tr>
+                        <td>
+                            <b>NPO:</b> &nbsp;{!dash_npo}
+                        </td>
+                        <td >
+                            <b>HTT P/N:</b> &nbsp;{!dash_pn}
+                        </td>
+                        <td >
+                            <b>Currency:</b> &nbsp;{!currency_value}
+                        </td>  
+                        <td >
+                            <b>Account:</b> &nbsp;{!dash_brand}
+                        </td>
+                        <td >                  
+                            <b>Engine Description:</b> &nbsp;{!dash_ed}
+                        </td>
+                        <td >                  
+                            <b>Channel:</b> &nbsp;{!dash_channel}
+                        </td>
+                        <td >
+                            <apex:commandButton action="{!updateSingle}" id="UpdateSingle1" value="Update Single PN" rerender="results_sbp,Pricesplit" style="float:right" status="loading4"> 
+                                <apex:actionStatus id="loading4" onstart="loading(true)" onstop="loading(false)" />     
+                            </apex:commandButton>                
+                        </td>                           
+                    </tr>
+                </table>
+                
+           <!-- modified to use transpose    <br>&nbsp;</br>
+                <b>Past Months</b>
+                <br></br>
+                <apex:pageBlockTable value="{!sbp_single_past}" var="sbp_list_single" columns="10" rowclasses="" styleClass="list" width="100%"> modified to use transpose-->
+                
+                    <!--<apex:column >
+                        <apex:facet name="header">HTT P/N</apex:facet>
+                        <apex:outputLink value="/{!sbp_list_single.Sales_Plan__c}">{!sbp_list_single.Sales_Plan__r.Material_prd__r.External_ID__c}</apex:outputLink>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Account</apex:facet>
+                        <apex:outputtext value="{!sbp_list_single.Sales_Plan__r.Brand__r.Name}" style="width:100%"/>
+                    </apex:column> -->
+               <!--modified to use transpose     <apex:column >
+                        <apex:facet name="header">MM/YY</apex:facet>
+                        <apex:outputtext value="{!sbp_list_single.Month__c} - {!sbp_list_single.Year__c}"/>
+                    </apex:column>--modified to use transpose>
+                    <!--<apex:column >
+                        <apex:facet name="header">AOP SAP Price</apex:facet>
+                        <a id="{!sbp_list_single.Id}"
+                            onmouseover="LookupHoverDetail.getHover('{!sbp_list_single.Id}', '/{!sbp_list_single.Id}/m?retURL={!sbp_list_single.Id}&isAjaxRequest=1').show();"
+                            onmouseout="LookupHoverDetail.getHover('{!sbp_list_single.Id}').hide();"
+                            onfocus="LookupHoverDetail.getHover('{!sbp_list_single.Id}', '/{!sbp_list_single.Id}/m?retURL={!sbp_list_single.Id}&isAjaxRequest=1').show();"
+                            onblur="LookupHoverDetail.getHover('{!sbp_list_single.Id}').hide();"
+                            href="/{!sbp_list_single.Id}"> 
+                            <apex:outputfield value="{!sbp_list_single.LC_Price__c}" style="width:100%"/>
+                        </a>
+                    </apex:column>-->                  
+                    <!-- modified to use transpose <apex:column >
+                        <apex:facet name="header">SAP Price</apex:facet>
+                        <apex:outputfield value="{!sbp_list_single.LC_Price__c}" style="width:100%"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">+/- PURE PRICE<br></br> CONTRACTUAL </apex:facet>
+                        <apex:inputtext value="{!sbp_list_single.PURE_PRICE_CONTRACTUAL_String__c}" style="width:100%"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">+/- PURE PRICE<br></br> BIZ WINS</apex:facet>
+                        <apex:inputtext value="{!sbp_list_single.PURE_PRICE_BIZ_WINS_String__c}" style="width:100%"/>
+                    </apex:column>              
+                    <apex:column >
+                        <apex:facet name="header"> +/- HLRR </apex:facet>
+                        <apex:inputtext value="{!sbp_list_single.HLRR_String__c}" style="width:100%"/>
+                    </apex:column> 
+                    <apex:column >
+                        <apex:facet name="header"> +/- FX</apex:facet>
+                        <apex:inputtext value="{!sbp_list_single.FX_String__c}" style="width:100%"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header"> +/- NICKEL</apex:facet>
+                        <apex:inputtext value="{!sbp_list_single.NICKEL_String__c}" style="width:100%"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">+/- OTHER METALS</apex:facet>
+                        <apex:inputtext value="{!sbp_list_single.OTHER_METALS_String__c}" style="width:100%"/>
+                    </apex:column>              
+                    <apex:column >
+                        <apex:facet name="header">+/- OTHER</apex:facet>
+                        <apex:inputtext value="{!sbp_list_single.OTHER_String__c}" style="width:100%"/>                     
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Forecast Price</apex:facet>
+                        <apex:outputfield value="{!sbp_list_single.LC_Price_calcd__c}"/>
+                    </apex:column>
+                        
+                </apex:pageBlockTable> 
+
+                <br>&nbsp;</br>
+
+                <b>Forecast Months</b>
+                <br></br>
+                <apex:pageBlockTable value="{!sbp_single_forecast}" var="sbp_list_single" columns="10" rowclasses="" styleClass="list" width="100%">--modified to use transpose>
+                
+                    <!--<apex:column >
+                        <apex:facet name="header">HTT P/N</apex:facet>
+                        <apex:outputLink value="/{!sbp_list_single.Sales_Plan__c}">{!sbp_list_single.Sales_Plan__r.Material_prd__r.External_ID__c}</apex:outputLink>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Account</apex:facet>
+                        <apex:outputtext value="{!sbp_list_single.Sales_Plan__r.Brand__r.Name}" style="width:100%"/>
+                    </apex:column> -->
+                   <!--modified to use transpose <apex:column >
+                        <apex:facet name="header">MM/YY</apex:facet>
+                        <apex:outputtext value="{!sbp_list_single.Month__c} - {!sbp_list_single.Year__c}"/>
+                    </apex:column>         modified to use transpose-->   
+                    <!--<apex:column >
+                        <apex:facet name="header">AOP SAP Price</apex:facet>
+                        <a id="{!sbp_list_single.Id}"
+                            onmouseover="LookupHoverDetail.getHover('{!sbp_list_single.Id}', '/{!sbp_list_single.Id}/m?retURL={!sbp_list_single.Id}&isAjaxRequest=1').show();"
+                            onmouseout="LookupHoverDetail.getHover('{!sbp_list_single.Id}').hide();"
+                            onfocus="LookupHoverDetail.getHover('{!sbp_list_single.Id}', '/{!sbp_list_single.Id}/m?retURL={!sbp_list_single.Id}&isAjaxRequest=1').show();"
+                            onblur="LookupHoverDetail.getHover('{!sbp_list_single.Id}').hide();"
+                            href="/{!sbp_list_single.Id}"> 
+                            <apex:outputfield value="{!sbp_list_single.LC_Price__c}" style="width:100%"/>
+                        </a>
+                    </apex:column>-->
+                    <!--modified to use transpose<apex:column >
+                        <apex:facet name="header">SAP Price</apex:facet>
+                        <apex:outputfield value="{!sbp_list_single.LC_Price__c}" style="width:100%"/>
+                    </apex:column>                  
+                    <apex:column >
+                        <apex:facet name="header">+/- PURE PRICE<br></br> CONTRACTUAL </apex:facet>
+                        <apex:inputtext value="{!sbp_list_single.PURE_PRICE_CONTRACTUAL_String__c}" style="width:100%"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">+/- PURE PRICE<br></br> BIZ WINS</apex:facet>
+                        <apex:inputtext value="{!sbp_list_single.PURE_PRICE_BIZ_WINS_String__c}" style="width:100%"/>
+                    </apex:column>              
+                    <apex:column >
+                        <apex:facet name="header"> +/- HLRR </apex:facet>
+                        <apex:inputtext value="{!sbp_list_single.HLRR_String__c}" style="width:100%"/>
+                    </apex:column> 
+                    <apex:column >
+                        <apex:facet name="header"> +/- FX</apex:facet>
+                        <apex:inputtext value="{!sbp_list_single.FX_String__c}" style="width:100%"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header"> +/- NICKEL</apex:facet>
+                        <apex:inputtext value="{!sbp_list_single.NICKEL_String__c}" style="width:100%"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">+/- OTHER METALS</apex:facet>
+                        <apex:inputtext value="{!sbp_list_single.OTHER_METALS_String__c}" style="width:100%"/>
+                    </apex:column>              
+                    <apex:column >
+                        <apex:facet name="header">+/- OTHER</apex:facet>
+                        <apex:inputtext value="{!sbp_list_single.OTHER_String__c}" style="width:100%"/>                     
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Forecast Price</apex:facet>
+                        <apex:outputfield value="{!sbp_list_single.LC_Price_calcd__c}"/>
+                    </apex:column>
+                        
+                </apex:pageBlockTable>              
+
+                <br>&nbsp;</br>          
+                
+                <center>                
+                    <apex:commandButton action="{!updateSingle}" id="UpdateSingle2" value="Update Single PN" rerender="results_sbp"/>
+                </center>
+                <br>&nbsp;</br> modified to use transpose-->
+                
+                <!-- Transpose table - start-->
+                
+                <apex:outputPanel id="SBPresult" layout="block" > 
+                
+                <br>&nbsp;</br>
+                {!message}
+                
+                <br>&nbsp;</br>
+                
+                <center>
+                    <apex:commandLink action="{!previous_year}" value="< Previous" rendered="{!if(show_curry==true || show_nexty==true,true,false)}" style="font-size:15px;"  reRender="SBPresult,Pricesplit,Simulation"/>
+                    &nbsp;<apex:outputText value="Past Year" style="font-size:18px;" rendered="{!show_pasty}"/> &nbsp;
+                    &nbsp;<apex:outputText value="Current Year" style="font-size:18px;" rendered="{!show_curry}"/> &nbsp;
+                    &nbsp;<apex:outputText value="Next Year" style="font-size:18px;" rendered="{!show_nexty}"/>&nbsp;
+                    <apex:commandLink action="{!next_year}" value="Next >" rendered="{!if(show_pasty==true || show_curry==true,true,false)}" style="font-size:15px;"  reRender="SBPresult,Pricesplit,Simulation"/>
+                </center>
+                
+                <br>&nbsp;</br>
+                
+                <!--<apex:commandLink action="{!previous_year}" value="< Previous" rendered="{!show_prevy}" reRender="SBPresult,Pricesplit"/>
+                &nbsp;<apex:outputText value="Current Year" style="font-weight:bold;" rendered="{!show_nexty}"/> &nbsp;
+                &nbsp;<apex:outputText value="Next Year" style="font-weight:bold;" rendered="{!show_prevy}"/>&nbsp;
+                <apex:commandLink action="{!next_year}" value="Next >" rendered="{!show_nexty}" reRender="SBPresult,Pricesplit"/>-->
+
+                <br></br>
+                
+                <apex:pageBlockTable value="{!sbp_tran_single}" var="sbp_tran_list_single" columns="13" rendered="{!show_pasty}" border="0" cellpadding="1"  styleClass="list" style="width:100%"  >
+                
+                    <apex:column style="background-color:#eae8e8;">
+                        <apex:facet name="header"></apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varPrice_RC}" />
+                    </apex:column>            
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">January {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM1Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==1 && sp_year==prev_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM1Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column> 
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">February {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM2Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==2 && sp_year==prev_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM2Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">March {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM3Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==3 && sp_year==prev_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM3Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">April {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM4Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==4 && sp_year==prev_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM4Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">May {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM5Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==5 && sp_year==prev_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM5Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">June {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM6Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==6 && sp_year==prev_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM6Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">July {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM7Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==7 && sp_year==prev_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM7Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">August {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM8Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==8 && sp_year==prev_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM8Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">September {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM9Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==9 && sp_year==prev_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM9Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">October {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM10Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==10 && sp_year==prev_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM10Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>   
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">November {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM11Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==11 && sp_year==prev_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM11Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">December {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM12Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==12 && sp_year==prev_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM12Y0}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                </apex:pageBlockTable> 
+                
+                <apex:pageBlockTable value="{!sbp_tran_single}" var="sbp_tran_list_single" columns="13" rendered="{!show_curry}" border="0" cellpadding="1"  styleClass="list" style="width:100%"  >
+                
+                    <apex:column style="background-color:#eae8e8;">
+                        <apex:facet name="header"></apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varPrice_RC}" />
+                    </apex:column>            
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==1 && sp_year==curr_year && ischangedSAPvSBP ==true,"background-color:#FF0000;",IF(sbp_tran_list_single.varPrice_RC=='SAP Price' ,"background-color:#eae8e8;","background-color:#ffffff;")))}">
+                        <apex:facet name="header">January {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM1Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==1 && sp_year==curr_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM1Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column> 
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==2 && sp_year==curr_year && ischangedSAPvSBP ==true,"background-color:#FF0000;",IF(sbp_tran_list_single.varPrice_RC=='SAP Price',"background-color:#eae8e8;","background-color:#ffffff;")))}">
+                        <apex:facet name="header">February {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM2Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==2 && sp_year==curr_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM2Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==3 && sp_year==curr_year && ischangedSAPvSBP ==true,"background-color:#FF0000;",IF(sbp_tran_list_single.varPrice_RC=='SAP Price' ,"background-color:#eae8e8;","background-color:#ffffff;")))}">
+                        <apex:facet name="header">March {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM3Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==3 && sp_year==curr_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM3Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==4 && sp_year==curr_year && ischangedSAPvSBP ==true,"background-color:#FF0000;",IF(sbp_tran_list_single.varPrice_RC=='SAP Price' ,"background-color:#eae8e8;","background-color:#ffffff;")))}">
+                        <apex:facet name="header">April {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM4Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==4 && sp_year==curr_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM4Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==5 && sp_year==curr_year && ischangedSAPvSBP ==true,"background-color:#FF0000;",IF(sbp_tran_list_single.varPrice_RC=='SAP Price' ,"background-color:#eae8e8;","background-color:#ffffff;")))}">
+                        <apex:facet name="header">May {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM5Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==5 && sp_year==curr_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM5Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==6 && sp_year==curr_year && ischangedSAPvSBP ==true,"background-color:#FF0000;",IF(sbp_tran_list_single.varPrice_RC=='SAP Price' ,"background-color:#eae8e8;","background-color:#ffffff;")))}">
+                        <apex:facet name="header">June {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM6Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==6 && sp_year==curr_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM6Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==7 && sp_year==curr_year && ischangedSAPvSBP ==true,"background-color:#FF0000;",IF(sbp_tran_list_single.varPrice_RC=='SAP Price' ,"background-color:#eae8e8;","background-color:#ffffff;")))}">
+                        <apex:facet name="header">July {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM7Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==7 && sp_year==curr_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM7Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==8 && sp_year==curr_year && ischangedSAPvSBP ==true,"background-color:#FF0000;",IF(sbp_tran_list_single.varPrice_RC=='SAP Price' ,"background-color:#eae8e8;","background-color:#ffffff;")))}">
+                        <apex:facet name="header">August {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM8Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==8 && sp_year==curr_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM8Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==9 && sp_year==curr_year && ischangedSAPvSBP ==true,"background-color:#FF0000;",IF(sbp_tran_list_single.varPrice_RC=='SAP Price' ,"background-color:#eae8e8;","background-color:#ffffff;")))}">
+                        <apex:facet name="header">September {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM9Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==9 && sp_year==curr_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM9Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==10 && sp_year==curr_year && ischangedSAPvSBP ==true,"background-color:#FF0000;",IF(sbp_tran_list_single.varPrice_RC=='SAP Price' ,"background-color:#eae8e8;","background-color:#ffffff;")))}">
+                        <apex:facet name="header">October {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM10Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==10 && sp_year==curr_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM10Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>   
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==11 && sp_year==curr_year && ischangedSAPvSBP ==true,"background-color:#FF0000;",IF(sbp_tran_list_single.varPrice_RC=='SAP Price' ,"background-color:#eae8e8;","background-color:#ffffff;")))}">
+                        <apex:facet name="header">November {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM11Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==11 && sp_year==curr_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM11Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==12 && sp_year==curr_year && ischangedSAPvSBP ==true,"background-color:#FF0000;",IF(sbp_tran_list_single.varPrice_RC=='SAP Price' ,"background-color:#eae8e8;","background-color:#ffffff;")))}">
+                        <apex:facet name="header">December {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM12Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==12 && sp_year==curr_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM12Y1}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                </apex:pageBlockTable>    
+                
+                <apex:pageBlockTable value="{!sbp_tran_single}" var="sbp_tran_list_single" columns="13" rendered="{!show_nexty}" rowclasses="" styleClass="list" style="width:100%"  >
+                
+                    <apex:column style="background-color:#eae8e8;">
+                        <apex:facet name="header"></apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varPrice_RC}"/>
+                    </apex:column>     
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">January {!next_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM1Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==1 && sp_year==next_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM1Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>   
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">February {!next_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM2Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==2 && sp_year==next_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM2Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">March {!next_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM3Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==3 && sp_year==next_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM3Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">April {!next_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM4Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==4 && sp_year==next_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM4Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">May {!next_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM5Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==5 && sp_year==next_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM5Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">June {!next_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM6Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==6 && sp_year==next_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM6Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column> 
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">July {!next_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM7Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==7 && sp_year==next_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM7Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">August {!next_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM8Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==8 && sp_year==next_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM8Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">September {!next_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM9Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==9 && sp_year==next_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM9Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">October {!next_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM10Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==10 && sp_year==next_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM10Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">November {!next_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM11Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==11 && sp_year==next_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM11Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column> 
+                    <apex:column style="{!IF(sbp_tran_list_single.varPrice_RC =='AOP Sales Price' || sbp_tran_list_single.varPrice_RC =='SAP Price'|| sbp_tran_list_single.varPrice_RC =='Forecast Price' || sbp_tran_list_single.varPrice_RC =='Current Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">December {!next_year}</apex:facet>
+                        <apex:outputtext value="{!sbp_tran_list_single.varM12Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC=='SAP Price' && sp_month==12 && sp_year==next_year,true,IF(sbp_tran_list_single.varPrice_RC=='Forecast Price' || sbp_tran_list_single.varPrice_RC=='AOP Sales Price' || sbp_tran_list_single.varPrice_RC=='Current Price', true,false))}"/>
+                        <apex:inputtext value="{!sbp_tran_list_single.varM12Y2}" style="width:100%" rendered="{!IF(sbp_tran_list_single.varPrice_RC!='SAP Price' && sbp_tran_list_single.varPrice_RC!='Forecast Price' && sbp_tran_list_single.varPrice_RC!='AOP Sales Price' && sbp_tran_list_single.varPrice_RC!='Current Price',true,false)}"/>
+                    </apex:column>         
+                    
+                </apex:pageBlockTable>        
+                
+                <br>&nbsp;</br>      
+                
+                <div id="contentLoadingUpdateS" style="display:none;">
+                    <div style="text-align: center;">
+                        <img src="/img/loading.gif" alt="Loading graphic" />
+                    </div>
+                    
+                </div>   
+                 
+                <br>&nbsp;</br> 
+                
+                <center>                
+                    <apex:commandButton action="{!updateSingle}" id="UpdateSingle2" value="Update Single PN" rerender="results_sbp,Pricesplit" status="loadingUpdateS">
+                        <apex:actionStatus id="loadingUpdateS" onstart="loadingUpdateS(true)" onstop="loadingUpdateS(false)" />
+                    </apex:commandButton>
+                </center>
+                <br>&nbsp;</br>      
+          
+
+                </apex:outputpanel>  
+                <!-- Transpose table -end -->
+                
+                <!-- Price split -start -->
+                
+                <br>&nbsp;</br>          
+                
+                <center>                
+                    <apex:commandButton action="{!showps}" id="ShowPS" value="Show Price Split" reRender="results_sbp,Pricesplit" rendered="{!If(show_pricesplit==true,hide_ps,false)}"/>
+                    <apex:commandButton action="{!hideps}" id="HidePS" value="Hide Price Split" reRender="results_sbp,Pricesplit" rendered="{!show_ps}"/>
+                </center>
+                <br>&nbsp;</br>                 
+                
+                <apex:outputPanel id="Pricesplit" layout="block" rendered="{!show_ps}" >                        
+                
+                
+                <!--<apex:commandLink action="{!previous_year}" value="< Previous" rendered="{!show_prevy}" reRender="Pricesplit,SBPresult"/>
+                &nbsp;<apex:outputText value="Current Year" style="font-weight:bold;" rendered="{!show_nexty}"/> &nbsp;
+                &nbsp;<apex:outputText value="Next Year" style="font-weight:bold;" rendered="{!show_prevy}"/>&nbsp;
+                <apex:commandLink action="{!next_year}" value="Next >" rendered="{!show_nexty}" reRender="Pricesplit,SBPresult"/>-->
+
+                <br></br>
+
+                <apex:pageBlockTable value="{!sbp_price_split}" var="price_split" columns="13" rendered="{!show_pasty}" rowclasses="" styleClass="list" style="width:100%"  >
+
+                    <apex:column headerClass="HclassAtt" style="background-color:#eae8e8;">
+                        <apex:facet name="header"></apex:facet>
+                        <apex:outputtext value="{!price_split.varPrice_RC}" />
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">January {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM1Y0}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==1 && sp_year==prev_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">February {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM2Y0}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==2 && sp_year==prev_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">March {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM3Y0}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==3 && sp_year==prev_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">April {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM4Y0}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==4 && sp_year==prev_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">May {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM5Y0}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==5 && sp_year==prev_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">June {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM6Y0}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==6 && sp_year==prev_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">July {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM7Y0}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==7 && sp_year==prev_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">August {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM8Y0}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==8 && sp_year==prev_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">September {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM9Y0}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==9 && sp_year==prev_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">October {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM10Y0}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==10 && sp_year==prev_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">November {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM11Y0}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==11 && sp_year==prev_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">December {!prev_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM12Y0}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==12 && sp_year==prev_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                </apex:pageBlockTable>
+
+                <apex:pageBlockTable value="{!sbp_price_split}" var="price_split" columns="13" rendered="{!show_curry}" rowclasses="" styleClass="list" style="width:100%"  >
+                
+                    <apex:column headerClass="HclassAtt" style="background-color:#eae8e8;">
+                        <apex:facet name="header"></apex:facet>
+                        <apex:outputtext value="{!price_split.varPrice_RC}" />
+                    </apex:column>            
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">January {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM1Y1}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==1 && sp_year==curr_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">February {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM2Y1}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==2 && sp_year==curr_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">March {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM3Y1}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==3 && sp_year==curr_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">April {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM4Y1}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==4 && sp_year==curr_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">May {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM5Y1}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==5 && sp_year==curr_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">June {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM6Y1}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==6 && sp_year==curr_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">July {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM7Y1}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==7 && sp_year==curr_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">August {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM8Y1}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==8 && sp_year==curr_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">September {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM9Y1}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==9 && sp_year==curr_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">October {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM10Y1}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==10 && sp_year==curr_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>   
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">November {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM11Y1}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==11 && sp_year==curr_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">December {!curr_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM12Y1}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==12 && sp_year==curr_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                </apex:pageBlockTable>    
+                
+                <apex:pageBlockTable value="{!sbp_price_split}" var="price_split" columns="13" rendered="{!show_nexty}" rowclasses="" styleClass="list" style="width:100%"  >
+                    
+                    <apex:column style="background-color:#eae8e8;">
+                        <apex:facet name="header"></apex:facet>
+                        <apex:outputtext value="{!price_split.varPrice_RC}"/>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">January {!next_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM1Y2}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==1 && sp_year==next_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>  
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">February {!next_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM2Y2}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==2 && sp_year==next_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">March {!next_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM3Y2}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==3 && sp_year==next_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">April {!next_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM4Y2}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==4 && sp_year==next_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">May {!next_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM5Y2}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==5 && sp_year==next_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">June {!next_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM6Y2}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==6 && sp_year==next_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">July {!next_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM7Y2}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==7 && sp_year==next_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">August {!next_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM8Y2}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==8 && sp_year==next_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">September {!next_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM9Y2}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==9 && sp_year==next_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">October {!next_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM10Y2}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==10 && sp_year==next_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">November {!next_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM11Y2}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==11 && sp_year==next_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_split.varPrice_RC =='SAP Price'|| price_split.varPrice_RC =='Forecast Price',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">December {!next_year}</apex:facet>
+                        <apex:outputtext value="{!price_split.varM12Y2}" style="width:100%" rendered="{!IF(price_split.varType=='SAP' && sp_month==12 && sp_year==next_year,true,IF(price_split.varType!='SAP',true,false))}"/>
+                    </apex:column>   
+                    
+                </apex:pageBlockTable> 
+                
+                </apex:outputpanel>  
+                <!-- Price split - end-->
+                
+                <!-- Simulation -start -->
+                
+                <br>&nbsp;</br>          
+                
+                <center>                
+                    <apex:commandButton action="{!showsim}" id="ShowSIM" value="Show Simulation VS PN" reRender="results_sbp,Pricesplit,Simulation" rendered="{!If(show_simulation=true,hide_sim,show_simulation)}" status="loading"/>
+                    <apex:commandButton action="{!hidesim}" id="HideSIM" value="Hide Simulation VS PN" reRender="results_sbp,Pricesplit,Simulation" rendered="{!show_sim}" status="loading"/>
+                </center>
+                <br>&nbsp;</br>   
+                
+                <apex:outputPanel id="Simulation" layout="block" rendered="{!show_sim}" >
+                
+                <!--<apex:outputtext value="({!conversion_rate})" />  rendered="{!IF(conversion_rate!=1, true,false)}" -->
+                <table>
+                <tr>
+                    <td>
+                        <apex:selectRadio id="chooseCurrency" value="{!curr_selected}" style="font-size:14px;" rendered="{!show_sim}" >
+                            <apex:selectOption itemValue="{!currency_value}" itemLabel="{!currency_value}" /> 
+                            <apex:selectOption itemValue="USD" itemLabel="USD" rendered="{!IF(currency_value='USD',false,true)}" />
+                            <apex:actionSupport event="onchange" action="{!showsim}" reRender="Simulation"/>
+                        </apex:selectRadio>
+                    </td>
+                    <td>
+                         <apex:outputtext value="(FX rate: {!ROUND(conversion_rate,4)})"  />
+                    </td>
+                </tr>
+                </table>
+                
+                <apex:pageBlockTable value="{!sbp_simulation_py}"  var="price_sim" columns="9" rendered="{!show_pasty}" rowclasses="" styleClass="list" style="width:50%"  >
+                
+                    <apex:column style="background-color:#eae8e8;">
+                        <apex:facet name="header">Reason Code </apex:facet>
+                        <apex:outputtext value="{!price_sim.varReasonCode}" />
+                    </apex:column>            
+                    <apex:column >
+                        <apex:facet name="header">Carry over <br/>from previous year</apex:facet>
+                        <apex:outputtext value="-" style="width:100%"/>
+                    </apex:column> 
+                    <apex:column >
+                        <apex:facet name="header">Current year <br/>Approved request</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_sim.varCurrY_App<>0,ROUND(price_sim.varCurrY_App/conversion_rate,0),'-')}" style="width:100%"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_sim.varCurrY_App<>0,ROUND(price_sim.varCurrY_App/conversion_rate,0),'')}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Current year <br/>Submitted request</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_sim.varCurrY_Sub<>0,ROUND(price_sim.varCurrY_Sub/conversion_rate,0),'-')}" style="width:100%"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_sim.varCurrY_Sub<>0,ROUND(price_sim.varCurrY_Sub/conversion_rate,0),'')}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Current year <br/>forecast</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_sim.varCurrY<>0,ROUND(price_sim.varCurrY/conversion_rate,0),'-')}" style="width:100%"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_sim.varCurrY<>0,ROUND(price_sim.varCurrY/conversion_rate,0),'')}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Total Currrent <br/>Year</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_sim.varTotCurrY<>0,ROUND(price_sim.varTotCurrY/conversion_rate,0),'-')}" style="width:100%"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_sim.varTotCurrY<>0,ROUND(price_sim.varTotCurrY/conversion_rate,0),'')}"/>
+                       </apex:outputText>
+                    </apex:column>
+                  <!--  <apex:column >
+                        <apex:facet name="header">AOP</apex:facet>
+                        <apex:outputtext value="{!IF(price_sim.varAOP<>0,ROUND(price_sim.varAOP/conversion_rate,0),0)}" style="width:100%"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Vs AOP</apex:facet>
+                        <apex:outputtext value="{!IF(price_sim.varVsAOP<>0,ROUND(price_sim.varVsAOP/conversion_rate,0),0)}" style="width:100%"/>
+                    </apex:column>-->
+                    <apex:column >
+                        <apex:facet name="header">Next Year <br/>Carry over</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_sim.varCO_nexty<>0,ROUND(price_sim.varCO_nexty/conversion_rate,0),'-')}" style="width:100%"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_sim.varCO_nexty<>0,ROUND(price_sim.varCO_nexty/conversion_rate,0),'')}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                </apex:pageBlockTable> 
+
+                <apex:pageBlockTable value="{!sbp_simulation}"  var="price_sim" columns="9" rendered="{!show_curry}" rowclasses="" styleClass="list" style="width:50%"  >
+                
+                    <apex:column style="background-color:#eae8e8;">
+                        <apex:facet name="header">Reason Code </apex:facet>
+                        <apex:outputtext value="{!price_sim.varReasonCode}" />
+                    </apex:column>            
+                    <apex:column >
+                        <apex:facet name="header">Carry over <br/>from previous year</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_sim.varCO_prevy<>0,ROUND(price_sim.varCO_prevy/conversion_rate,0),'-')}" style="width:100%"/> -->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_sim.varCO_prevy<>0,ROUND(price_sim.varCO_prevy/conversion_rate,0),'')}"/>
+                       </apex:outputText>                       
+                    </apex:column> 
+                    <apex:column >
+                        <apex:facet name="header">Current year <br/>Approved request</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_sim.varCurrY_App<>0,ROUND(price_sim.varCurrY_App/conversion_rate,0),'-')}" style="width:100%"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_sim.varCurrY_App<>0,ROUND(price_sim.varCurrY_App/conversion_rate,0),'')}" />
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Current year <br/>Submitted request</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_sim.varCurrY_Sub<>0,ROUND(price_sim.varCurrY_Sub/conversion_rate,0),'-')}" style="width:100%"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_sim.varCurrY_Sub<>0,ROUND(price_sim.varCurrY_Sub/conversion_rate,0),'')}"/>
+                       </apex:outputText> 
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Current year <br/>forecast</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_sim.varCurrY<>0,ROUND(price_sim.varCurrY/conversion_rate,0),'-')}" style="width:100%"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_sim.varCurrY<>0,ROUND(price_sim.varCurrY/conversion_rate,0),'')}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Total Currrent <br/>Year</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_sim.varTotCurrY<>0,ROUND(price_sim.varTotCurrY/conversion_rate,0),'-')}" style="width:100%"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_sim.varTotCurrY<>0,ROUND(price_sim.varTotCurrY/conversion_rate,0),'')}"/>
+                       </apex:outputText>
+                    </apex:column>
+                   <!-- <apex:column >
+                        <apex:facet name="header">AOP</apex:facet>
+                        <apex:outputtext value="{!IF(price_sim.varAOP<>0,ROUND(price_sim.varAOP/conversion_rate,0),0)}" style="width:100%"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Vs AOP</apex:facet>
+                        <apex:outputtext value="{!IF(price_sim.varVsAOP<>0,ROUND(price_sim.varVsAOP/conversion_rate,0),0)}" style="width:100%"/>
+                    </apex:column>-->
+                    <apex:column >
+                        <apex:facet name="header">Next Year <br/>Carry over</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_sim.varCO_nexty<>0,ROUND(price_sim.varCO_nexty/conversion_rate,0),'-')}" style="width:100%"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_sim.varCO_nexty<>0,ROUND(price_sim.varCO_nexty/conversion_rate,0),'')}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                </apex:pageBlockTable>  
+                
+                <apex:pageBlockTable value="{!sbp_simulation_ny}"  var="price_sim" columns="9" rendered="{!show_nexty}" rowclasses="" styleClass="list" style="width:50%"  >
+                
+                    <apex:column style="background-color:#eae8e8;">
+                        <apex:facet name="header">Reason Code </apex:facet>
+                        <apex:outputtext value="{!price_sim.varReasonCode}" />
+                        <!--<apex:outputText value="${0,number,###,##0}">
+                          <apex:param value="{!price_sim.varReasonCode}" />
+                      </apex:outputText>-->
+                    </apex:column>            
+                    <apex:column >
+                        <apex:facet name="header">Carry over <br/>from previous year</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_sim.varCO_prevy<>0,ROUND(price_sim.varCO_prevy/conversion_rate,0),'-')}" style="width:100%"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_sim.varCO_prevy<>0,ROUND(price_sim.varCO_prevy/conversion_rate,0),'')}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                    <apex:column >
+                        <apex:facet name="header">Current year <br/>Approved request</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_sim.varCurrY_App<>0,ROUND(price_sim.varCurrY_App/conversion_rate,0),'-')}" style="width:100%"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_sim.varCurrY_App<>0,ROUND(price_sim.varCurrY_App/conversion_rate,0),'')}" />
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Current year <br/>Submitted request</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_sim.varCurrY_Sub<>0,ROUND(price_sim.varCurrY_Sub/conversion_rate,0),'-')}" style="width:100%"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_sim.varCurrY_Sub<>0,ROUND(price_sim.varCurrY_Sub/conversion_rate,0),'')}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Current year <br/>forecast</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_sim.varCurrY<>0,ROUND(price_sim.varCurrY/conversion_rate,0),'-')}" style="width:100%"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_sim.varCurrY<>0,ROUND(price_sim.varCurrY/conversion_rate,0),'')}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Total Currrent <br/>Year</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_sim.varTotCurrY<>0,ROUND(price_sim.varTotCurrY/conversion_rate,0),'-')}" style="width:100%"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_sim.varTotCurrY<>0,ROUND(price_sim.varTotCurrY/conversion_rate,0),'')}"/>
+                       </apex:outputText>
+                    </apex:column>
+                   <!-- <apex:column >
+                        <apex:facet name="header">AOP</apex:facet>
+                        <apex:outputtext value="-" style="width:100%"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">Vs AOP</apex:facet>
+                        <apex:outputtext value="-" style="width:100%"/>
+                    </apex:column>-->
+                    <apex:column >
+                        <apex:facet name="header">Next Year <br/>Carry over</apex:facet>
+                        <apex:outputtext value="-" style="width:100%"/>
+                    </apex:column> 
+                </apex:pageBlockTable>  
+                
+                
+                <br/>
+                
+                <apex:commandButton onclick="impSumAcc('{!sp_id}')" id="OvwBrand" value="Impact Summary by Account" rendered="true" status="loading"/>
+                
+                <br/>
+                <br/>
+                <br/>
+                
+                <!--<apex:commandLink action="{!previous_year}" value="< Previous" rendered="{!show_prevy}" reRender="Simulation"/>
+                &nbsp;<apex:outputText value="Current Year" style="font-weight:bold;" rendered="{!show_nexty}"/> &nbsp;
+                &nbsp;<apex:outputText value="Next Year" style="font-weight:bold;" rendered="{!show_prevy}"/>&nbsp;
+                <apex:commandLink action="{!next_year}" value="Next >" rendered="{!show_nexty}" reRender="Simulation"/>-->
+
+                <br></br>
+                
+                <apex:pageBlockTable value="{!sbp_simulation_details_py}" var="price_simdet" rendered="{!show_pasty}" columns="15" rowclasses="" styleClass="list" style="width:100%"  >
+
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">({!curr_selected})</apex:facet>
+                        <apex:outputtext value="{!price_simdet.varReasonCode}" />
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header"></apex:facet>
+                        <apex:outputtext value="{!price_simdet.varType}" />
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">Annual {!prev_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varAnnual<>0,ROUND(price_simdet.varAnnual/conversion_rate,0),'-'),ROUND(price_simdet.varAnnual,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varAnnual<>0,ROUND(price_simdet.varAnnual/conversion_rate,0),''),ROUND(price_simdet.varAnnual,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">January {!prev_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM1<>0,ROUND(price_simdet.varM1/conversion_rate,0),'-'),ROUND(price_simdet.varM1,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM1<>0,ROUND(price_simdet.varM1/conversion_rate,0),''),ROUND(price_simdet.varM1,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">February {!prev_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM2<>0,ROUND(price_simdet.varM2/conversion_rate,0),'-'),ROUND(price_simdet.varM2,0))}"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM2<>0,ROUND(price_simdet.varM2/conversion_rate,0),''),ROUND(price_simdet.varM2,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">March {!prev_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM3<>0,ROUND(price_simdet.varM3/conversion_rate,0),'-'),ROUND(price_simdet.varM3,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM3<>0,ROUND(price_simdet.varM3/conversion_rate,0),''),ROUND(price_simdet.varM3,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">April {!prev_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM4<>0,ROUND(price_simdet.varM4/conversion_rate,0),'-'),ROUND(price_simdet.varM4,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM4<>0,ROUND(price_simdet.varM4/conversion_rate,0),''),ROUND(price_simdet.varM4,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">May {!prev_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM5<>0,ROUND(price_simdet.varM5/conversion_rate,0),'-'),ROUND(price_simdet.varM5,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM5<>0,ROUND(price_simdet.varM5/conversion_rate,0),''),ROUND(price_simdet.varM5,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">June {!prev_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM6<>0,ROUND(price_simdet.varM6/conversion_rate,0),'-'),ROUND(price_simdet.varM6,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM6<>0,ROUND(price_simdet.varM6/conversion_rate,0),''),ROUND(price_simdet.varM6,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">July {!prev_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM7<>0, ROUND(price_simdet.varM7/conversion_rate,0),'-'),ROUND(price_simdet.varM7,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM7<>0, ROUND(price_simdet.varM7/conversion_rate,0),''),ROUND(price_simdet.varM7,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">August {!prev_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM8<>0,ROUND(price_simdet.varM8/conversion_rate,0),'-'),ROUND(price_simdet.varM8,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM8<>0,ROUND(price_simdet.varM8/conversion_rate,0),''),ROUND(price_simdet.varM8,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">September {!prev_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM9<>0,ROUND(price_simdet.varM9/conversion_rate,0),'-'),ROUND(price_simdet.varM9,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM9<>0,ROUND(price_simdet.varM9/conversion_rate,0),''),ROUND(price_simdet.varM9,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">October {!prev_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM10<>0,ROUND(price_simdet.varM10/conversion_rate,0),'-'),ROUND(price_simdet.varM10,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM10<>0,ROUND(price_simdet.varM10/conversion_rate,0),''),ROUND(price_simdet.varM10,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">November {!prev_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM11<>0,ROUND(price_simdet.varM11/conversion_rate,0),'-'),ROUND(price_simdet.varM11,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM11<>0,ROUND(price_simdet.varM11/conversion_rate,0),''),ROUND(price_simdet.varM11,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">December {!prev_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM12<>0,ROUND(price_simdet.varM12/conversion_rate,0),'-'),ROUND(price_simdet.varM12,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM12<>0,ROUND(price_simdet.varM12/conversion_rate,0),''),ROUND(price_simdet.varM12,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+
+
+                </apex:pageBlockTable>
+
+                <apex:pageBlockTable value="{!sbp_simulation_details}" var="price_simdet" rendered="{!show_curry}" columns="15" rowclasses="" styleClass="list" style="width:100%"  >
+                
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">({!curr_selected})</apex:facet>
+                        <apex:outputtext value="{!price_simdet.varReasonCode}" />
+                    </apex:column> 
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header"></apex:facet>
+                        <apex:outputtext value="{!price_simdet.varType}" />
+                    </apex:column>      
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">Annual {!curr_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varAnnual<>0,ROUND(price_simdet.varAnnual/conversion_rate,0),'-'),ROUND(price_simdet.varAnnual,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varAnnual<>0,ROUND(price_simdet.varAnnual/conversion_rate,0),''),ROUND(price_simdet.varAnnual,0))}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">January {!curr_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM1<>0, ROUND(price_simdet.varM1/conversion_rate,0),'-'),ROUND(price_simdet.varM1,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM1<>0, ROUND(price_simdet.varM1/conversion_rate,0),''),ROUND(price_simdet.varM1,0))}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">February {!curr_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM2<>0,ROUND(price_simdet.varM2/conversion_rate,0),'-'),ROUND(price_simdet.varM2,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM2<>0,ROUND(price_simdet.varM2/conversion_rate,0),''),ROUND(price_simdet.varM2,0))}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">March {!curr_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM3<>0,ROUND(price_simdet.varM3/conversion_rate,0),'-'),ROUND(price_simdet.varM3,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM3<>0,ROUND(price_simdet.varM3/conversion_rate,0),''),ROUND(price_simdet.varM3,0))}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">April {!curr_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM4<>0,ROUND(price_simdet.varM4/conversion_rate,0),'-'),ROUND(price_simdet.varM4,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM4<>0,ROUND(price_simdet.varM4/conversion_rate,0),''),ROUND(price_simdet.varM4,0))}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">May {!curr_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM5<>0, ROUND(price_simdet.varM5/conversion_rate,0),'-'),ROUND(price_simdet.varM5,0))}"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM5<>0, ROUND(price_simdet.varM5/conversion_rate,0),''),ROUND(price_simdet.varM5,0))}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">June {!curr_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM6<>0,ROUND(price_simdet.varM6/conversion_rate,0),'-'),ROUND(price_simdet.varM6,0))}"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM6<>0,ROUND(price_simdet.varM6/conversion_rate,0),''),ROUND(price_simdet.varM6,0))}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">July {!curr_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM7<>0, ROUND(price_simdet.varM7/conversion_rate,0),'-'),ROUND(price_simdet.varM7,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM7<>0, ROUND(price_simdet.varM7/conversion_rate,0),''),ROUND(price_simdet.varM7,0))}"/>
+                       </apex:outputText>
+                    </apex:column>     
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">August {!curr_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM8<>0,ROUND(price_simdet.varM8/conversion_rate,0),'-'),ROUND(price_simdet.varM8,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM8<>0,ROUND(price_simdet.varM8/conversion_rate,0),''),ROUND(price_simdet.varM8,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">September {!curr_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM9<>0,ROUND(price_simdet.varM9/conversion_rate,0),'-'),ROUND(price_simdet.varM9,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM9<>0,ROUND(price_simdet.varM9/conversion_rate,0),''),ROUND(price_simdet.varM9,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">October {!curr_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM10<>0,ROUND(price_simdet.varM10/conversion_rate,0),'-'),ROUND(price_simdet.varM10,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM10<>0,ROUND(price_simdet.varM10/conversion_rate,0),''),ROUND(price_simdet.varM10,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">November {!curr_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM11<>0,ROUND(price_simdet.varM11/conversion_rate,0),'-'),ROUND(price_simdet.varM11,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM11<>0,ROUND(price_simdet.varM11/conversion_rate,0),''),ROUND(price_simdet.varM11,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">December {!curr_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM12<>0,ROUND(price_simdet.varM12/conversion_rate,0),'-'),ROUND(price_simdet.varM12,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM12<>0,ROUND(price_simdet.varM12/conversion_rate,0),''),ROUND(price_simdet.varM12,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    
+                                     
+                </apex:pageBlockTable>    
+                
+                
+                <apex:pageBlockTable value="{!sbp_simulation_details_ny}" var="price_simdet" rendered="{!show_nexty}" columns="15" rowclasses="" styleClass="list" style="width:100%"  >
+                
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">({!curr_selected})</apex:facet>
+                        <apex:outputtext value="{!price_simdet.varReasonCode}" />
+                    </apex:column> 
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header"></apex:facet>
+                        <apex:outputtext value="{!price_simdet.varType}" />
+                    </apex:column>      
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">Annual {!next_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varAnnual<>0,ROUND(price_simdet.varAnnual/conversion_rate,0),'-'),ROUND(price_simdet.varAnnual,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varAnnual<>0,ROUND(price_simdet.varAnnual/conversion_rate,0),''),ROUND(price_simdet.varAnnual,0))}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">January {!next_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM1<>0,ROUND(price_simdet.varM1/conversion_rate,0),'-'),ROUND(price_simdet.varM1,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM1<>0,ROUND(price_simdet.varM1/conversion_rate,0),''),ROUND(price_simdet.varM1,0))}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">February {!next_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM2<>0,ROUND(price_simdet.varM2/conversion_rate,0),'-'),ROUND(price_simdet.varM2,0))}"/>-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM2<>0,ROUND(price_simdet.varM2/conversion_rate,0),''),ROUND(price_simdet.varM2,0))}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">March {!next_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM3<>0,ROUND(price_simdet.varM3/conversion_rate,0),'-'),ROUND(price_simdet.varM3,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM3<>0,ROUND(price_simdet.varM3/conversion_rate,0),''),ROUND(price_simdet.varM3,0))}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">April {!next_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM4<>0,ROUND(price_simdet.varM4/conversion_rate,0),'-'),ROUND(price_simdet.varM4,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM4<>0,ROUND(price_simdet.varM4/conversion_rate,0),''),ROUND(price_simdet.varM4,0))}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">May {!next_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM5<>0,ROUND(price_simdet.varM5/conversion_rate,0),'-'),ROUND(price_simdet.varM5,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM5<>0,ROUND(price_simdet.varM5/conversion_rate,0),''),ROUND(price_simdet.varM5,0))}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">June {!next_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM6<>0,ROUND(price_simdet.varM6/conversion_rate,0),'-'),ROUND(price_simdet.varM6,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM6<>0,ROUND(price_simdet.varM6/conversion_rate,0),''),ROUND(price_simdet.varM6,0))}"/>
+                       </apex:outputText>
+                    </apex:column> 
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">July {!next_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM7<>0,ROUND(price_simdet.varM7/conversion_rate,0),'-'),ROUND(price_simdet.varM7,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM7<>0,ROUND(price_simdet.varM7/conversion_rate,0),''),ROUND(price_simdet.varM7,0))}"/>
+                       </apex:outputText>
+                    </apex:column>     
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">August {!next_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM8<>0,ROUND(price_simdet.varM8/conversion_rate,0),'-'),ROUND(price_simdet.varM8,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM8<>0,ROUND(price_simdet.varM8/conversion_rate,0),''),ROUND(price_simdet.varM8,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">September {!next_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM9<>0,ROUND(price_simdet.varM9/conversion_rate,0),'-'),ROUND(price_simdet.varM9,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM9<>0,ROUND(price_simdet.varM9/conversion_rate,0),''),ROUND(price_simdet.varM9,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">October {!next_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM10<>0,ROUND(price_simdet.varM10/conversion_rate,0),'-'),ROUND(price_simdet.varM10,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM10<>0,ROUND(price_simdet.varM10/conversion_rate,0),''),ROUND(price_simdet.varM10,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">November {!next_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM11<>0,ROUND(price_simdet.varM11/conversion_rate,0),'-'),ROUND(price_simdet.varM11,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM11<>0,ROUND(price_simdet.varM11/conversion_rate,0),''),ROUND(price_simdet.varM11,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    <apex:column style="{!IF(price_simdet.varReasonCode =='SP',"background-color:#eae8e8;", "background-color:#ffffff;")}">
+                        <apex:facet name="header">December {!next_year}</apex:facet>
+                        <!--<apex:outputtext value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM12<>0,ROUND(price_simdet.varM12/conversion_rate,0),'-'),ROUND(price_simdet.varM12,0))}" />-->
+                        <apex:outputText value="{0,number,###,###,###}">
+                          <apex:param value="{!IF(price_simdet.varReasonCode !='SP',IF(price_simdet.varM12<>0,ROUND(price_simdet.varM12/conversion_rate,0),''),ROUND(price_simdet.varM12,0))}"/>
+                       </apex:outputText>
+                    </apex:column>
+                    
+                                     
+                </apex:pageBlockTable>    
+                
+                </apex:outputpanel>  
+                <!-- Simulation - end-->
+                
+            </apex:outputpanel>         
+            
+        </apex:outputPanel>
+        
+    </apex:pageBlock>
+    
+    </apex:form> 
+        
+</apex:page>
